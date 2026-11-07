@@ -99,7 +99,7 @@ export default function VerifyPage() {
           <div className={`label ${granted ? "text-live" : "text-warn"}`}>
             {granted ? "Access granted" : "Access denied"}
           </div>
-          <div className="text-3xl sm:text-4xl font-bold font-display mt-2">
+          <div className="text-3xl sm:text-4xl font-semibold font-display mt-2">
             {granted
               ? `${short(target.toBase58())} holds an active ${plans.find((p) => p.address.equals(best!.plan))?.name ?? ""} pass.`
               : `${short(target.toBase58())} has no active pass${plan ? ` for ${plan.name}` : ""}.`}
@@ -123,7 +123,7 @@ export default function VerifyPage() {
         ].map(([n, t, d]) => (
           <div key={n} className="panel p-5">
             <div className="label">Step {n}</div>
-            <h3 className="text-lg font-bold mt-1">{t}</h3>
+            <h3 className="text-lg font-semibold mt-1">{t}</h3>
             <p className="text-sm text-ink-2 mt-2">{d}</p>
           </div>
         ))}

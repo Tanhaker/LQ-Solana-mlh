@@ -62,7 +62,7 @@ export default function IssuerPage() {
             }
           }}
         >
-          <h2 className="text-xl font-bold">New plan</h2>
+          <h2 className="text-xl font-semibold">New plan</h2>
           <Field label="Plan name" htmlFor="name">
             <input
               id="name"
@@ -129,7 +129,7 @@ export default function IssuerPage() {
         </form>
 
         <section>
-          <h2 className="text-xl font-bold mb-4">Your plans</h2>
+          <h2 className="text-[24px] sm:text-[28px] font-semibold mb-5">Your plans. <span className="soft">Live on Solana.</span></h2>
           {myPlans.length === 0 ? (
             <Empty>{wallet ? "You haven't created a plan yet." : "Connect a wallet to see your plans."}</Empty>
           ) : (
@@ -144,7 +144,7 @@ export default function IssuerPage() {
                   <article key={plan.address.toBase58()} className="panel p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-lg font-bold">{plan.name}</h3>
+                        <h3 className="text-lg font-semibold">{plan.name}</h3>
                         <div className="text-sm text-muted mt-1">
                           {usdc(plan.price)} USDC · {planLength(plan.duration.toNumber())} ·{" "}
                           {plan.royaltyBps / 100}% royalty

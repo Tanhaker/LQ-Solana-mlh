@@ -38,7 +38,7 @@ export default function MarketPage() {
 
       <section className="mt-8">
         <div className="flex items-end justify-between gap-4 mb-4">
-          <h2 className="text-2xl font-bold">Resale, price falling</h2>
+          <h2 className="text-[24px] sm:text-[28px] font-semibold">Resale. <span className="soft">Price falling every second.</span></h2>
           <span className="label">{resale.length} listed</span>
         </div>
         {resale.length === 0 ? (
@@ -92,7 +92,7 @@ export default function MarketPage() {
 
       <section className="mt-14">
         <div className="flex items-end justify-between gap-4 mb-4">
-          <h2 className="text-2xl font-bold">New passes from issuers</h2>
+          <h2 className="text-[24px] sm:text-[28px] font-semibold">New passes. <span className="soft">Straight from the issuer.</span></h2>
           <span className="label">{openPlans.length} plans</span>
         </div>
         {openPlans.length === 0 ? (
@@ -106,7 +106,7 @@ export default function MarketPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="label">Plan</div>
-                      <h3 className="text-xl font-bold mt-1 truncate">{plan.name}</h3>
+                      <h3 className="text-xl font-semibold mt-1 truncate">{plan.name}</h3>
                     </div>
                     <div className="text-right">
                       <div className="num text-2xl font-medium">{usdc(plan.price)}</div>

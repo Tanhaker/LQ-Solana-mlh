@@ -94,7 +94,7 @@ export default function PassesPage() {
 
       {expired.length > 0 && (
         <section className="mt-12">
-          <h2 className="text-xl font-bold mb-4">Expired</h2>
+          <h2 className="text-xl font-semibold mb-4">Expired</h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 opacity-70">
             {expired.map((pass) => (
               <PassTicket

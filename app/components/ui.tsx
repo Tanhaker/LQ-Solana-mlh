@@ -2,10 +2,10 @@
 
 export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
-    <div className="pt-10 sm:pt-14 max-w-3xl">
-      <div className="label">{eyebrow}</div>
-      <h1 className="text-3xl sm:text-5xl font-bold mt-2 leading-[1.05]">{title}</h1>
-      {sub && <p className="text-ink-2 text-lg mt-4 leading-relaxed">{sub}</p>}
+    <div className="pt-12 sm:pt-16 pb-2 max-w-3xl rise">
+      <div className="eyebrow eyebrow-new">{eyebrow}</div>
+      <h1 className="text-[34px] sm:text-[48px] font-semibold mt-2 leading-[1.08]">{title}</h1>
+      {sub && <p className="text-muted text-[17px] sm:text-[19px] mt-4 leading-[1.45]">{sub}</p>}
     </div>
   );
 }

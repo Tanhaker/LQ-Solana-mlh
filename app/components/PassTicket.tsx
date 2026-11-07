@@ -29,7 +29,7 @@ export default function PassTicket({ pass, plan, now, price, tags, children, own
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="label">Pass #{pass.number.toNumber() + 1}</div>
-            <h3 className="text-xl font-bold mt-1 truncate">{plan?.name ?? "Unknown plan"}</h3>
+            <h3 className="text-xl font-semibold mt-1 truncate">{plan?.name ?? "Unknown plan"}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {expired ? (
                 <span className="chip">Expired</span>

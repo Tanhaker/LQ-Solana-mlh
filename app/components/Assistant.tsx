@@ -98,7 +98,7 @@ export default function Assistant() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="label">Pass assistant</div>
-          <h2 className="text-xl font-bold mt-1">Tell it what you want in plain English.</h2>
+          <h2 className="text-xl font-semibold mt-1">Tell it what you want in plain English.</h2>
         </div>
         <span className="chip chip-accent">You confirm before anything is signed</span>
       </div>
