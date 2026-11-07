@@ -171,35 +171,3 @@ function Sparkle({ x, y }: { x: number; y: number }) {
     />
   );
 }
-
-/** A soft, grainy 3D tube that loops behind the hero. */
-export function Tube({ className }: { className?: string }) {
-  const d = "M-160 760C120 980 420 860 470 600S300 170 560 110 980 260 1010 520 1180 900 1460 780 1760 420 1500 230";
-  return (
-    <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" className={className} aria-hidden>
-      <defs>
-        <filter id="tube-grain" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n" />
-          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0.2  0 0 0 0 0.45  0 0 0 0.55 0" result="dots" />
-          <feComposite in="dots" in2="SourceGraphic" operator="in" result="grain" />
-          <feMerge>
-            <feMergeNode in="SourceGraphic" />
-            <feMergeNode in="grain" />
-          </feMerge>
-        </filter>
-        <filter id="tube-soft">
-          <feGaussianBlur stdDeviation="14" />
-        </filter>
-      </defs>
-      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d={d} stroke="#0b5fc4" strokeWidth="190" transform="translate(10 22)" />
-        <g filter="url(#tube-grain)">
-          <path d={d} stroke="#1f7fe6" strokeWidth="180" />
-          <path d={d} stroke="#3c95f5" strokeWidth="130" transform="translate(-8 -12)" />
-          <path d={d} stroke="#5aa9ff" strokeWidth="80" transform="translate(-16 -26)" />
-        </g>
-        <path d={d} stroke="#c9e5ff" strokeWidth="26" transform="translate(-26 -44)" opacity="0.55" filter="url(#tube-soft)" />
-      </g>
-    </svg>
-  );
-}

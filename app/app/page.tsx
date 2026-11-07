@@ -14,7 +14,6 @@ import {
   HourglassSticker,
   TagSticker,
   TicketSticker,
-  Tube,
 } from "@/components/Stickers";
 import { duration, planLength, usdc } from "@/lib/format";
 import { currentPrice } from "@/lib/program";
@@ -40,8 +39,11 @@ export default function Home() {
 function Hero() {
   return (
     <section className="sheet !bg-[var(--sky)]">
-      <div className="absolute inset-x-0 top-0 h-[190vh] pointer-events-none para" data-scroll style={{ ["--amt" as string]: "-360px" }}>
-        <Tube className="w-full h-full" />
+      {/* Rendered foam tube (scripts/render-tube.py). It starts above the sheet's
+          top edge so the parallax never reveals a cut end. */}
+      <div className="absolute inset-x-0 -top-[14vh] h-[max(62.5vw,118vh)] pointer-events-none para" data-scroll style={{ ["--amt" as string]: "-220px" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/tube.webp" alt="" fetchPriority="high" decoding="async" className="tube-in w-full h-full object-cover object-center" />
       </div>
 
       <div className="relative pt-[120px] sm:pt-[150px] pb-16 sm:pb-24 px-4 text-center">
