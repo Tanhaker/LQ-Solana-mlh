@@ -7,7 +7,7 @@ import {
 } from "@solana/spl-token";
 import BN from "bn.js";
 import type { LiquidPass } from "./idl/liquid_pass";
-import { listingPda, passPda, planPda, usdcAta, usdcMint, type Listing, type Pass, type Plan } from "./program";
+import { listingPda, metaPda, passPda, planPda, usdcAta, usdcMint, type Listing, type Pass, type Plan } from "./program";
 
 type P = Program<LiquidPass>;
 
@@ -43,16 +43,38 @@ export async function faucet(p: P, mintReady: boolean) {
   return call.rpc();
 }
 
-export function createPlan(
+/**
+ * Creates a plan. With `metadataUri` (an ipfs:// link from /api/ipfs), the
+ * plan's logo and description are attached in the same transaction.
+ */
+export async function createPlan(
   p: P,
-  args: { name: string; price: BN; durationSec: number; royaltyBps: number },
+  args: { name: string; price: BN; durationSec: number; royaltyBps: number; metadataUri?: string },
 ) {
   const issuer = me(p);
   // Any unique u64 works; a millisecond timestamp keeps plan addresses distinct per issuer.
   const planId = new BN(Date.now());
-  return p.methods
+  const plan = planPda(issuer, planId);
+  const call = p.methods
     .createPlan(planId, args.name, args.price, new BN(args.durationSec), args.royaltyBps)
-    .accountsPartial({ issuer, plan: planPda(issuer, planId), systemProgram: SystemProgram.programId })
+    .accountsPartial({ issuer, plan, systemProgram: SystemProgram.programId });
+  if (args.metadataUri) {
+    call.postInstructions([await metadataIx(p, plan, args.metadataUri)]);
+  }
+  return call.rpc();
+}
+
+const metadataIx = (p: P, plan: PublicKey, uri: string) =>
+  p.methods
+    .setPlanMetadata(uri)
+    .accountsPartial({ issuer: me(p), plan, meta: metaPda(plan), systemProgram: SystemProgram.programId })
+    .instruction();
+
+/** Attaches or replaces a plan's IPFS metadata (issuer only). */
+export function setPlanMetadata(p: P, plan: Plan, uri: string) {
+  return p.methods
+    .setPlanMetadata(uri)
+    .accountsPartial({ issuer: me(p), plan: plan.address, meta: metaPda(plan.address), systemProgram: SystemProgram.programId })
     .rpc();
 }
 

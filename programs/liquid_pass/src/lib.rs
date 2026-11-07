@@ -26,6 +26,9 @@ pub const USDC_SEED: &[u8] = b"usdc";
 pub const PLAN_SEED: &[u8] = b"plan";
 pub const PASS_SEED: &[u8] = b"pass";
 pub const LISTING_SEED: &[u8] = b"listing";
+pub const META_SEED: &[u8] = b"meta";
+/// Room for "ipfs://" plus any CIDv0 or CIDv1 (base32), with margin.
+pub const MAX_URI_LEN: usize = 128;
 
 #[program]
 pub mod liquid_pass {
@@ -227,6 +230,33 @@ pub mod liquid_pass {
         });
         Ok(())
     }
+
+    /// Issuer attaches or replaces the plan's public metadata: an `ipfs://`
+    /// link to a JSON file (description, logo) pinned on IPFS. Kept in its own
+    /// account so plans created before this instruction existed are unchanged.
+    pub fn set_plan_metadata(ctx: Context<SetPlanMetadata>, uri: String) -> Result<()> {
+        require!(valid_ipfs_uri(&uri), PassError::InvalidUri);
+        let meta = &mut ctx.accounts.meta;
+        meta.plan = ctx.accounts.plan.key();
+        meta.uri = uri;
+        meta.updated_at = Clock::get()?.unix_timestamp;
+        meta.bump = ctx.bumps.meta;
+        emit!(PlanMetadataSet {
+            plan: meta.plan,
+            uri: meta.uri.clone(),
+        });
+        Ok(())
+    }
+}
+
+/// `ipfs://` followed by a plain CID: letters and digits only, sensible length.
+pub fn valid_ipfs_uri(uri: &str) -> bool {
+    match uri.strip_prefix("ipfs://") {
+        Some(cid) => {
+            uri.len() <= MAX_URI_LEN && cid.len() >= 46 && cid.bytes().all(|b| b.is_ascii_alphanumeric())
+        }
+        None => false,
+    }
 }
 
 /// Linear decay from `opening_price` at `listed_at` to zero at `expiry`.
@@ -288,7 +318,36 @@ pub struct Listing {
     pub bump: u8,
 }
 
+/// Public metadata for a plan, at PDA `[b"meta", plan]`.
+#[account]
+#[derive(InitSpace)]
+pub struct PlanMeta {
+    pub plan: Pubkey,
+    /// `ipfs://<cid>` of a JSON file: { name, description, image }.
+    #[max_len(128)]
+    pub uri: String,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
 // ---------------------------------------------------------------- contexts
+
+#[derive(Accounts)]
+pub struct SetPlanMetadata<'info> {
+    #[account(mut)]
+    pub issuer: Signer<'info>,
+    #[account(has_one = issuer @ PassError::NotIssuer)]
+    pub plan: Account<'info, Plan>,
+    #[account(
+        init_if_needed,
+        payer = issuer,
+        space = 8 + PlanMeta::INIT_SPACE,
+        seeds = [META_SEED, plan.key().as_ref()],
+        bump
+    )]
+    pub meta: Account<'info, PlanMeta>,
+    pub system_program: Program<'info, System>,
+}
 
 #[derive(Accounts)]
 pub struct InitFaucet<'info> {
@@ -505,6 +564,12 @@ pub struct PassPurchased {
 }
 
 #[event]
+pub struct PlanMetadataSet {
+    pub plan: Pubkey,
+    pub uri: String,
+}
+
+#[event]
 pub struct PassResold {
     pub pass: Pubkey,
     pub seller: Pubkey,
@@ -548,6 +613,8 @@ pub enum PassError {
     PriceAboveMax,
     #[msg("Arithmetic overflow")]
     MathOverflow,
+    #[msg("Metadata must be an ipfs:// link to a CID")]
+    InvalidUri,
 }
 
 #[cfg(test)]
@@ -569,6 +636,19 @@ mod tests {
     fn price_never_exceeds_opening() {
         // A clock reading before listed_at must not inflate the price.
         assert_eq!(current_price(1000, 50, 100, 10).unwrap(), 1000);
+    }
+
+    #[test]
+    fn metadata_uri_rules() {
+        let v0 = "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+        let v1 = "ipfs://bafkreie7q3iidccmpvszul7kudcvvuavuo7u6gzlbobczuk5nqk3b4akba";
+        assert!(valid_ipfs_uri(v0));
+        assert!(valid_ipfs_uri(v1));
+        assert!(!valid_ipfs_uri("https://example.com/logo.png"));
+        assert!(!valid_ipfs_uri("ipfs://short"));
+        assert!(!valid_ipfs_uri("ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG/../x"));
+        let long = format!("ipfs://{}", "a".repeat(200));
+        assert!(!valid_ipfs_uri(&long));
     }
 
     #[test]

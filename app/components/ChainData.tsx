@@ -14,6 +14,7 @@ import {
   usdcMint,
   writeProgram,
   type Listing,
+  type PlanMeta,
   type Pass,
   type Plan,
 } from "@/lib/program";
@@ -24,6 +25,8 @@ type ChainData = {
   plans: Plan[];
   passes: Pass[];
   listings: Listing[];
+  /** Plan address -> ipfs:// link of its metadata (logo, description). */
+  metas: Map<string, string>;
   loading: boolean;
   loadError: string | null;
   /** Seconds since epoch, ticking once a second (0 before mount). */
@@ -56,6 +59,8 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [passes, setPasses] = useState<Pass[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [metaList, setMetaList] = useState<PlanMeta[]>([]);
+  const metas = useMemo(() => new Map(metaList.map((m) => [m.plan.toBase58(), m.uri])), [metaList]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [now, setNow] = useState(0);
@@ -88,6 +93,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         plans: [] as Plan[],
         passes: [] as Pass[],
         listings: [] as Listing[],
+        metas: [] as PlanMeta[],
         mintReady: snap.mintReady,
         wallet: snap.wallet,
       };
@@ -100,15 +106,17 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         const decoded = reader.coder.accounts.decode(kind[0].toLowerCase() + kind.slice(1), data);
         if (kind === "Plan") out.plans.push({ ...decoded, address });
         else if (kind === "Pass") out.passes.push({ ...decoded, address });
-        else out.listings.push({ ...decoded, address });
+        else if (kind === "Listing") out.listings.push({ ...decoded, address });
+        else if (kind === "PlanMeta") out.metas.push({ ...decoded, address });
       }
       return out;
     } catch (err) {
       console.warn("Liquid Pass: snapshot unavailable, reading devnet directly", err);
-      const [pl, pa, li, mintInfo] = await Promise.all([
+      const [pl, pa, li, me, mintInfo] = await Promise.all([
         reader.account.plan.all(),
         reader.account.pass.all(),
         reader.account.listing.all(),
+        reader.account.planMeta.all(),
         connection.getAccountInfo(usdcMint()),
       ]);
       return {
@@ -116,6 +124,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         plans: pl.map((p) => ({ ...p.account, address: p.publicKey })),
         passes: pa.map((p) => ({ ...p.account, address: p.publicKey })),
         listings: li.map((p) => ({ ...p.account, address: p.publicKey })),
+        metas: me.map((p) => ({ ...p.account, address: p.publicKey })),
         mintReady: mintInfo !== null,
         wallet: null,
       };
@@ -145,6 +154,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         setPlans(snap.plans);
         setPasses(snap.passes);
         setListings(snap.listings);
+        setMetaList(snap.metas);
         setMintReady(snap.mintReady);
       }
       setLoadError(null);
@@ -255,6 +265,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
     plans,
     passes,
     listings,
+    metas,
     loading,
     loadError,
     now,

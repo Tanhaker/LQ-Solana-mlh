@@ -11,7 +11,10 @@ export type PlanData = IdlAccounts<LiquidPass>["plan"];
 export type PassData = IdlAccounts<LiquidPass>["pass"];
 export type ListingData = IdlAccounts<LiquidPass>["listing"];
 
+export type PlanMetaData = IdlAccounts<LiquidPass>["planMeta"];
+
 export type Plan = PlanData & { address: PublicKey };
+export type PlanMeta = PlanMetaData & { address: PublicKey };
 export type Pass = PassData & { address: PublicKey };
 export type Listing = ListingData & { address: PublicKey };
 
@@ -79,6 +82,9 @@ export const passPda = (plan: PublicKey, number: BN) =>
     [Buffer.from("pass"), plan.toBuffer(), number.toArrayLike(Buffer, "le", 8)],
     PROGRAM_ID,
   )[0];
+
+export const metaPda = (plan: PublicKey) =>
+  PublicKey.findProgramAddressSync([Buffer.from("meta"), plan.toBuffer()], PROGRAM_ID)[0];
 
 export const listingPda = (pass: PublicKey) =>
   PublicKey.findProgramAddressSync([Buffer.from("listing"), pass.toBuffer()], PROGRAM_ID)[0];

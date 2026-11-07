@@ -57,6 +57,28 @@ devnet rather than from memory. It is read-only: it cannot sign or move funds, a
 refuses seed phrases. Code: `app/components/LiquidityAI.tsx`, `app/app/api/chat/route.ts`.
 Without an AI key it falls back to keyword answers.
 
+## Plan logos and descriptions on IPFS (Pinata)
+
+An issuer can give a plan a logo and a short description, on the Issuer page when
+creating the plan or later with **Add logo & description**.
+
+1. The browser sends the image and text to `/api/ipfs`. The server checks the file
+   really is a PNG, JPG, WebP or GIF of at most 1 MB, then pins the logo and a
+   metadata JSON (`{ name, description, image: "ipfs://…" }`) on IPFS through
+   Pinata. The Pinata key never leaves the server.
+2. The returned `ipfs://<cid>` link is stored on Solana by `set_plan_metadata`, in
+   the same transaction as `create_plan` for a new plan. It lives in its own
+   `PlanMeta` account (`[b"meta", plan]`), so plans made before the upgrade are
+   unchanged. Only the plan's issuer can set it, and the program accepts only
+   `ipfs://` links to a CID.
+3. Every page reads the link from chain and loads the metadata through `/api/meta`,
+   cached for a year because a CID always names the same content. Each plan card has
+   a **Metadata on IPFS** link to check the file.
+
+Code: `app/app/api/ipfs/route.ts`, `app/app/api/meta/route.ts`, `app/lib/ipfs.ts`,
+`app/components/PlanInfo.tsx`. `scripts/seed-metadata.ts` gives the demo plans their
+logos (drawn by `scripts/make-plan-logos.py`).
+
 ## Program
 
 `programs/liquid_pass/src/lib.rs` (Anchor 1.2.2):
@@ -70,9 +92,10 @@ Without an AI key it falls back to keyword answers.
 | `transfer_pass` | owner | Gift. Not while listed or expired. |
 | `list_pass` / `cancel_listing` | owner | Starting price ≤ original plan price. |
 | `buy_listing(max_price)` | buyer | Price from the clock, `max_price` protects the buyer, royalty to the issuer, rest to the seller. |
+| `set_plan_metadata(uri)` | issuer | Attaches or replaces the plan's `ipfs://` metadata link (logo, description). |
 
 Accounts are PDAs: `plan = [b"plan", issuer, plan_id]`, `pass = [b"pass", plan, number]`,
-`listing = [b"listing", pass]`, test USDC mint `= [b"usdc"]`.
+`listing = [b"listing", pass]`, `plan_meta = [b"meta", plan]`, test USDC mint `= [b"usdc"]`.
 
 ## Run it
 
@@ -93,6 +116,8 @@ Optional `app/.env.local`:
 ```
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
 GOOGLE_GENERATIVE_AI_API_KEY=...   # Gemini for Liquidity AI and the pass assistant
+PINATA_JWT=...                     # Pinata API key (JWT) for logo uploads to IPFS
+NEXT_PUBLIC_PINATA_GATEWAY=...     # your Pinata gateway domain, e.g. name.mypinata.cloud
 ```
 
 Use a wallet such as Phantom in devnet mode, get devnet SOL at

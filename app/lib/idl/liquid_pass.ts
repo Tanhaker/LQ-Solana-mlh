@@ -883,6 +883,68 @@ export type LiquidPass = {
       ]
     },
     {
+      "name": "setPlanMetadata",
+      "docs": [
+        "Issuer attaches or replaces the plan's public metadata: an `ipfs://`",
+        "link to a JSON file (description, logo) pinned on IPFS. Kept in its own",
+        "account so plans created before this instruction existed are unchanged."
+      ],
+      "discriminator": [
+        113,
+        215,
+        38,
+        226,
+        89,
+        82,
+        33,
+        145
+      ],
+      "accounts": [
+        {
+          "name": "issuer",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "plan"
+          ]
+        },
+        {
+          "name": "plan"
+        },
+        {
+          "name": "meta",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "plan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "transferPass",
       "docs": [
         "Gift a pass. The expiry does not change."
@@ -957,6 +1019,19 @@ export type LiquidPass = {
         162,
         2
       ]
+    },
+    {
+      "name": "planMeta",
+      "discriminator": [
+        67,
+        22,
+        241,
+        37,
+        43,
+        69,
+        35,
+        80
+      ]
     }
   ],
   "events": [
@@ -984,6 +1059,19 @@ export type LiquidPass = {
         99,
         168,
         247
+      ]
+    },
+    {
+      "name": "planMetadataSet",
+      "discriminator": [
+        30,
+        146,
+        111,
+        123,
+        205,
+        18,
+        253,
+        33
       ]
     }
   ],
@@ -1062,6 +1150,11 @@ export type LiquidPass = {
       "code": 6014,
       "name": "mathOverflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6015,
+      "name": "invalidUri",
+      "msg": "Metadata must be an ipfs:// link to a CID"
     }
   ],
   "types": [
@@ -1246,6 +1339,52 @@ export type LiquidPass = {
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "planMeta",
+      "docs": [
+        "Public metadata for a plan, at PDA `[b\"meta\", plan]`."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "plan",
+            "type": "pubkey"
+          },
+          {
+            "name": "uri",
+            "docs": [
+              "`ipfs://<cid>` of a JSON file: { name, description, image }."
+            ],
+            "type": "string"
+          },
+          {
+            "name": "updatedAt",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "planMetadataSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "plan",
+            "type": "pubkey"
+          },
+          {
+            "name": "uri",
+            "type": "string"
           }
         ]
       }

@@ -7,6 +7,8 @@ import { buyListing, buyPass } from "@/lib/actions";
 import { planLength, short, usdc } from "@/lib/format";
 import { currentPrice } from "@/lib/program";
 import { Empty, LoadState, PageHead } from "@/components/ui";
+import { PlanLogo, usePlanInfo } from "@/components/PlanInfo";
+import type { Plan } from "@/lib/program";
 
 export default function MarketPage() {
   const { plans, passes, listings, now, wallet, run, loading, loadError } = useChain();
@@ -99,52 +101,69 @@ export default function MarketPage() {
           <Empty>No plans yet. Create the first one on the Issuer page.</Empty>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {openPlans.map((plan) => {
-              const isIssuer = wallet?.equals(plan.issuer);
-              return (
-                <article key={plan.address.toBase58()} className="panel p-5 flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="label">Plan</div>
-                      <h3 className="display text-[30px] leading-[0.95] mt-1.5 line-clamp-2 break-words">{plan.name}</h3>
-                    </div>
-                    <div className="text-right">
-                      <div className="num text-2xl font-medium">{usdc(plan.price)}</div>
-                      <div className="label">USDC</div>
-                    </div>
-                  </div>
-                  <dl className="grid grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <dt className="label">Length</dt>
-                      <dd className="mt-0.5">{planLength(plan.duration.toNumber())}</dd>
-                    </div>
-                    <div>
-                      <dt className="label">Royalty</dt>
-                      <dd className="mt-0.5 num">{plan.royaltyBps / 100}%</dd>
-                    </div>
-                    <div>
-                      <dt className="label">Sold</dt>
-                      <dd className="mt-0.5 num">{plan.sold.toString()}</dd>
-                    </div>
-                  </dl>
-                  <div className="flex items-center justify-between gap-3 mt-auto pt-2">
-                    <span className="text-sm text-muted num">Issuer {short(plan.issuer.toBase58())}</span>
-                    <button
-                      className="btn btn-ink btn-sm"
-                      disabled={!wallet || isIssuer}
-                      title={isIssuer ? "You issue this plan" : ""}
-                      onClick={() => run(`Buy ${plan.name}`, (p) => buyPass(p, plan))}
-                    >
-                      {isIssuer ? "Your plan" : "Buy pass"}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+            {openPlans.map((plan) => (
+              <PlanCard key={plan.address.toBase58()} plan={plan} />
+            ))}
           </div>
         )}
         {!wallet && <p className="text-sm text-muted mt-4">Connect a wallet to buy.</p>}
       </section>
     </>
+  );
+}
+
+function PlanCard({ plan }: { plan: Plan }) {
+  const { wallet, run } = useChain();
+  const info = usePlanInfo(plan.address);
+  const isIssuer = wallet?.equals(plan.issuer);
+  return (
+    <article className="panel p-5 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <PlanLogo name={plan.name} info={info} />
+          <div className="min-w-0">
+            <div className="label">Plan</div>
+            <h3 className="display text-[30px] leading-[0.95] mt-1.5 line-clamp-2 break-words">{plan.name}</h3>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="num text-2xl font-medium">{usdc(plan.price)}</div>
+          <div className="label">USDC</div>
+        </div>
+      </div>
+      {info?.description && <p className="text-sm text-ink-2 leading-snug line-clamp-3">{info.description}</p>}
+      <dl className="grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <dt className="label">Length</dt>
+          <dd className="mt-0.5">{planLength(plan.duration.toNumber())}</dd>
+        </div>
+        <div>
+          <dt className="label">Royalty</dt>
+          <dd className="mt-0.5 num">{plan.royaltyBps / 100}%</dd>
+        </div>
+        <div>
+          <dt className="label">Sold</dt>
+          <dd className="mt-0.5 num">{plan.sold.toString()}</dd>
+        </div>
+      </dl>
+      <div className="flex items-center justify-between gap-3 mt-auto pt-2">
+        <span className="text-sm text-muted num flex flex-col">
+          <span>Issuer {short(plan.issuer.toBase58())}</span>
+          {info?.jsonUrl && (
+            <a className="underline text-xs" href={info.jsonUrl} target="_blank" rel="noreferrer">
+              Metadata on IPFS ↗
+            </a>
+          )}
+        </span>
+        <button
+          className="btn btn-ink btn-sm"
+          disabled={!wallet || isIssuer}
+          title={isIssuer ? "You issue this plan" : ""}
+          onClick={() => run(`Buy ${plan.name}`, (p) => buyPass(p, plan))}
+        >
+          {isIssuer ? "Your plan" : "Buy pass"}
+        </button>
+      </div>
+    </article>
   );
 }

@@ -2,6 +2,7 @@
 
 import { duration, short } from "@/lib/format";
 import type { Pass, Plan } from "@/lib/program";
+import { PlanLogo, usePlanInfo } from "./PlanInfo";
 
 type Props = {
   pass: Pass;
@@ -22,23 +23,27 @@ export default function PassTicket({ pass, plan, now, price, tags, children, own
   const left = Math.max(0, expiry - now);
   const pct = total > 0 ? Math.min(100, (left / total) * 100) : 0;
   const expired = now > 0 && left === 0;
+  const info = usePlanInfo(plan?.address);
 
   return (
     <article className="ticket flex flex-col" data-pass={pass.address.toBase58()}>
       <div className="p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="label">Pass #{pass.number.toNumber() + 1}</div>
-            <h3 className="display text-[30px] leading-[0.95] mt-1.5 line-clamp-2 break-words">{plan?.name ?? "Unknown plan"}</h3>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {expired ? (
-                <span className="chip">Expired</span>
-              ) : (
-                <span className="chip chip-live">
-                  <span className="pulse" /> Active
-                </span>
-              )}
-              {tags}
+          <div className="min-w-0 flex items-start gap-3">
+            {plan && <PlanLogo name={plan.name} info={info} size={44} />}
+            <div className="min-w-0">
+              <div className="label">Pass #{pass.number.toNumber() + 1}</div>
+              <h3 className="display text-[30px] leading-[0.95] mt-1.5 line-clamp-2 break-words">{plan?.name ?? "Unknown plan"}</h3>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {expired ? (
+                  <span className="chip">Expired</span>
+                ) : (
+                  <span className="chip chip-live">
+                    <span className="pulse" /> Active
+                  </span>
+                )}
+                {tags}
+              </div>
             </div>
           </div>
           {price && <div className="text-right shrink-0">{price}</div>}

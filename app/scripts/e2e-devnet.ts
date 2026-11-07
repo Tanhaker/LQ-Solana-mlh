@@ -25,7 +25,7 @@ import { join } from "node:path";
 import idl from "../lib/idl/liquid_pass.json";
 import type { LiquidPass } from "../lib/idl/liquid_pass";
 import * as actions from "../lib/actions";
-import { currentPrice, listingPda, passPda, usdcAta, usdcMint } from "../lib/program";
+import { currentPrice, listingPda, metaPda, passPda, usdcAta, usdcMint } from "../lib/program";
 import type { Plan, Pass, Listing } from "../lib/program";
 
 const RPC = process.env.RPC_URL ?? "https://api.devnet.solana.com";
@@ -95,6 +95,16 @@ async function main() {
   const plan: Plan = { ...planAcc.account, address: planAcc.publicKey };
   check("plan created", plan.price.eqn(20_000_000) && plan.royaltyBps === 1000);
 
+  // 2b. Plan metadata (IPFS link): issuer only, ipfs:// links only, replaceable.
+  const uriA = "ipfs://bafkreie7q3iidccmpvszul7kudcvvuavuo7u6gzlbobczuk5nqk3b4akba";
+  const uriB = "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+  await actions.setPlanMetadata(pIssuer, plan, uriA);
+  check("issuer set metadata", (await pIssuer.account.planMeta.fetch(metaPda(plan.address))).uri === uriA);
+  await actions.setPlanMetadata(pIssuer, plan, uriB);
+  check("issuer replaced metadata", (await pIssuer.account.planMeta.fetch(metaPda(plan.address))).uri === uriB);
+  await expectFail("non-issuer cannot set metadata", () => actions.setPlanMetadata(pSeller, plan, uriA), /issuer/i);
+  await expectFail("non-IPFS link rejected", () => actions.setPlanMetadata(pIssuer, plan, "https://example.com/x.json"), /ipfs/i);
+
   // 3. Seller buys a pass. Issuer receives the full price.
   const issuerBefore = await usdcBalance(issuer.publicKey);
   await actions.buyPass(pSeller, plan);
@@ -144,6 +154,10 @@ async function main() {
   await actions.transferPass(pBuyer, { ...passAcc, address: passAddr }, seller.publicKey);
   passAcc = await pBuyer.account.pass.fetch(passAddr);
   check("gift moved the pass", passAcc.owner.equals(seller.publicKey));
+
+  // 8. Take the test plan off the market so it doesn't clutter the demo.
+  await actions.setPlanActive(pIssuer, plan, false);
+  check("test plan paused", !(await pIssuer.account.plan.fetch(plan.address)).active);
 
   console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
   process.exit(failures === 0 ? 0 : 1);
