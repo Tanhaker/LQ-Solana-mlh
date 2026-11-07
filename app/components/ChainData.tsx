@@ -48,7 +48,7 @@ const DISCRIMINATORS = idl.accounts.map((a) => ({ name: a.name, bytes: a.discrim
 export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const toast = useToast();
 
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -172,7 +172,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
       }
       const id = toast.push("pending", `${label}: confirm in your wallet…`);
       try {
-        const sig = await build(writeProgram(connection, anchorWallet));
+        const sig = await build(writeProgram(connection, anchorWallet, sendTransaction));
         toast.update(id, "success", `${label}: confirmed on Solana devnet.`, sig);
         await refresh(true);
         return true;
@@ -182,7 +182,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     },
-    [anchorWallet, connection, refresh, toast],
+    [anchorWallet, connection, refresh, sendTransaction, toast],
   );
 
   const value: ChainData = {

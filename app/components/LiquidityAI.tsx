@@ -139,7 +139,7 @@ export default function LiquidityAI() {
         aria-label="Liquidity AI"
         aria-hidden={!open}
         inert={!open}
-        className={`lq-panel fixed z-[55] right-4 sm:right-6 bottom-[96px] sm:bottom-[116px] w-[calc(100vw-32px)] sm:w-[410px] h-[min(620px,calc(100dvh-130px))] flex flex-col overflow-hidden rounded-[30px] bg-white ${
+        className={`lq-panel fixed z-[55] right-4 sm:right-6 bottom-[108px] sm:bottom-[138px] w-[calc(100vw-32px)] sm:w-[410px] h-[min(620px,calc(100dvh-150px))] flex flex-col overflow-hidden rounded-[30px] bg-white ${
           open ? "is-open" : ""
         }`}
       >
@@ -255,7 +255,7 @@ export default function LiquidityAI() {
       <div className="fixed z-[56] right-4 sm:right-6 bottom-4 sm:bottom-6 flex items-center gap-3 group">
         <span
           className={`hidden md:block pointer-events-none text-[13px] font-bold uppercase tracking-[0.02em] bg-[var(--yellow)] border-[2.5px] border-black px-3.5 py-1.5 rounded-full transition-all duration-300 ${
-            open ? "opacity-0 translate-x-2" : "opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
+            open ? "opacity-0 translate-x-2" : "opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 xl:opacity-100 xl:translate-x-0"
           }`}
         >
           Ask Liquidity AI

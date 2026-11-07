@@ -1,6 +1,6 @@
 import { AnchorProvider, Program, type IdlAccounts } from "@anchor-lang/core";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey, Transaction, type Signer } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import idl from "./idl/liquid_pass.json";
@@ -20,8 +20,40 @@ export function readProgram(connection: Connection): Program<LiquidPass> {
   return new Program(idl as LiquidPass, { connection });
 }
 
-export function writeProgram(connection: Connection, wallet: AnchorWallet): Program<LiquidPass> {
+/** The wallet adapter's sendTransaction (from useWallet). */
+export type SendTx = (
+  tx: Transaction,
+  connection: Connection,
+  options?: { signers?: Signer[]; preflightCommitment?: "confirmed" },
+) => Promise<string>;
+
+/**
+ * Write client. Every `.rpc()` goes through the wallet adapter's
+ * `sendTransaction`, which tells the wallet the transaction is for
+ * `solana:devnet`. Anchor's default path calls `signTransaction` without a
+ * chain, so wallets such as MetaMask simulate it on mainnet, where this
+ * program doesn't exist, and refuse to sign.
+ */
+export function writeProgram(connection: Connection, wallet: AnchorWallet, send: SendTx): Program<LiquidPass> {
   const provider = new AnchorProvider(connection, wallet, { commitment: "confirmed" });
+  provider.sendAndConfirm = async (tx, signers) => {
+    if (!(tx instanceof Transaction)) throw new Error("Versioned transactions aren't used here.");
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    tx.feePayer = wallet.publicKey;
+    tx.recentBlockhash = blockhash;
+    // Simulate on devnet first, so a program error shows its real message
+    // (Anchor turns these logs into a readable error) instead of a wallet warning.
+    const sim = await connection.simulateTransaction(tx);
+    if (sim.value.err) {
+      throw Object.assign(new Error(`Simulation failed: ${JSON.stringify(sim.value.err)}`), {
+        logs: sim.value.logs ?? [],
+      });
+    }
+    const sig = await send(tx, connection, { signers, preflightCommitment: "confirmed" });
+    const res = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
+    if (res.value.err) throw new Error(`Transaction failed on devnet: ${JSON.stringify(res.value.err)}`);
+    return sig;
+  };
   return new Program(idl as LiquidPass, provider);
 }
 
@@ -79,7 +111,10 @@ export function errorMessage(err: unknown): string {
   const e = err as { error?: { errorMessage?: string }; message?: string; logs?: string[] };
   if (e?.error?.errorMessage) return e.error.errorMessage;
   const msg = e?.message ?? String(err);
+  const name = (err as { name?: string })?.name ?? "";
   if (/User rejected/i.test(msg)) return "You rejected the request in your wallet.";
+  if (/WalletSendTransactionError/.test(name) && !msg)
+    return "Your wallet isn't on Solana Devnet. Switch its network to Devnet (or use Phantom) and try again.";
   if (/insufficient funds/i.test(msg)) return "Not enough test USDC. Use the faucet on My Passes.";
   if (/0x1\b/.test(msg)) return "Not enough funds for this transaction.";
   if (/Attempt to debit an account but found no record of a prior credit/i.test(msg))

@@ -587,8 +587,8 @@ select:focus-visible {
 /* Liquidity AI */
 .lq-fab {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 76px;
+  height: 76px;
   border-radius: 999px;
   overflow: hidden;
   background: #f8f8f8; /* matches the light video's backdrop */
@@ -615,8 +615,8 @@ select:focus-visible {
 }
 @media (min-width: 640px) {
   .lq-fab {
-    width: 74px;
-    height: 74px;
+    width: 96px;
+    height: 96px;
   }
 }
 .lq-panel {
@@ -949,6 +949,30 @@ select:focus-visible {
     width: calc(64% + 36% * var(--g));
   }
 }
+/* The cards grow with the box as it opens to full screen (--g: 0 → 1). */
+.pin-card-l,
+.pin-card-r {
+  --grow: 0.08;
+  scale: calc(1 + var(--grow) * var(--g, 0));
+}
+@media (min-width: 1024px) and (min-height: 700px) {
+  .pin-card-l,
+  .pin-card-r {
+    --grow: 0.2;
+  }
+}
+@media (min-width: 1280px) and (min-height: 760px) {
+  .pin-card-l,
+  .pin-card-r {
+    --grow: 0.32;
+  }
+}
+@media (min-width: 1600px) and (min-height: 860px) {
+  .pin-card-l,
+  .pin-card-r {
+    --grow: 0.45;
+  }
+}
 .pin-card-l {
   transform: rotateY(calc(26deg - var(--p, 0) * 52deg)) rotateZ(calc(-9deg + var(--p, 0) * 13deg))
     translateY(calc((0.5 - var(--p, 0)) * 70px));
@@ -1038,6 +1062,7 @@ select:focus-visible {
   .pin-card-l,
   .pin-card-r {
     transform: none !important;
+    scale: none !important;
   }
   .track {
     overflow-x: auto;
