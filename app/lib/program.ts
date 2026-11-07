@@ -34,7 +34,12 @@ export type SendTx = (
  * chain, so wallets such as MetaMask simulate it on mainnet, where this
  * program doesn't exist, and refuse to sign.
  */
-export function writeProgram(connection: Connection, wallet: AnchorWallet, send: SendTx): Program<LiquidPass> {
+export function writeProgram(
+  connection: Connection,
+  wallet: AnchorWallet,
+  send: SendTx,
+  onConfirmed?: (slot: number) => void,
+): Program<LiquidPass> {
   const provider = new AnchorProvider(connection, wallet, { commitment: "confirmed" });
   provider.sendAndConfirm = async (tx, signers) => {
     if (!(tx instanceof Transaction)) throw new Error("Versioned transactions aren't used here.");
@@ -52,6 +57,7 @@ export function writeProgram(connection: Connection, wallet: AnchorWallet, send:
     const sig = await send(tx, connection, { signers, preflightCommitment: "confirmed" });
     const res = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
     if (res.value.err) throw new Error(`Transaction failed on devnet: ${JSON.stringify(res.value.err)}`);
+    onConfirmed?.(res.context.slot);
     return sig;
   };
   return new Program(idl as LiquidPass, provider);

@@ -17,6 +17,7 @@ import {
   type Pass,
   type Plan,
 } from "@/lib/program";
+import { PROGRAM_ID } from "@/lib/config";
 import { useToast } from "./Toast";
 
 type ChainData = {
@@ -32,7 +33,8 @@ type ChainData = {
   balance: BN | null;
   sol: number | null;
   wallet: PublicKey | null;
-  refresh: () => Promise<void>;
+  /** Re-reads the chain; with `minSlot`, waits until devnet has reached that slot. */
+  refresh: (minSlot?: number) => Promise<void>;
   /**
    * Runs a write. `build` receives a wallet-backed program and returns the
    * signature. Shows pending / success / error toasts and refreshes data.
@@ -68,19 +70,27 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
    * Program accounts: first from the cached /api/state snapshot (one devnet
    * read shared by every visitor), falling back to reading devnet directly.
    */
-  const loadAccounts = useCallback(async (fresh = false) => {
+  const loadAccounts = useCallback(async (minSlot?: number) => {
     try {
       const q = new URLSearchParams();
       if (publicKey) q.set("owner", publicKey.toBase58());
-      if (fresh) q.set("fresh", String(Date.now()));
+      if (minSlot) q.set("minSlot", String(minSlot));
       const res = await fetch(`/api/state${q.size ? `?${q}` : ""}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`state ${res.status}`);
       const snap: {
+        slot: number;
         mintReady: boolean;
         accounts: { pubkey: string; data: string }[];
-        wallet: { usdc: string | null; lamports: number } | null;
+        wallet: { slot: number; usdc: string | null; lamports: number } | null;
       } = await res.json();
-      const out = { plans: [] as Plan[], passes: [] as Pass[], listings: [] as Listing[], mintReady: snap.mintReady, wallet: snap.wallet };
+      const out = {
+        slot: snap.slot as number | null,
+        plans: [] as Plan[],
+        passes: [] as Pass[],
+        listings: [] as Listing[],
+        mintReady: snap.mintReady,
+        wallet: snap.wallet,
+      };
       for (const a of snap.accounts) {
         const data = Buffer.from(a.data, "base64");
         const kind = DISCRIMINATORS.find((d) => d.bytes.every((b, i) => data[i] === b))?.name;
@@ -102,6 +112,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         connection.getAccountInfo(usdcMint()),
       ]);
       return {
+        slot: null, // read straight from devnet: newest available, slot unknown
         plans: pl.map((p) => ({ ...p.account, address: p.publicKey })),
         passes: pa.map((p) => ({ ...p.account, address: p.publicKey })),
         listings: li.map((p) => ({ ...p.account, address: p.publicKey })),
@@ -112,23 +123,39 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   }, [reader, connection, publicKey]);
 
   const hasData = useRef(false);
-  const refresh = useCallback(async (fresh = false, wait = false) => {
-    // A post-transaction or wallet-change refresh waits for a routine one instead of being dropped.
-    for (let i = 0; (fresh || wait) && inflight.current && i < 80; i++) await new Promise((r) => setTimeout(r, 100));
-    if (inflight.current) return;
-    inflight.current = true;
+  /** Slot of the data on screen. Older answers (out-of-order or lagging reads) are ignored. */
+  const shownSlot = useRef(0);
+  const walletSlot = useRef(0);
+  useEffect(() => {
+    walletSlot.current = 0; // a different wallet's balances start fresh
+  }, [publicKey]);
+
+  /**
+   * Routine refreshes (`minSlot` unset) are skipped while one is running.
+   * Targeted ones (after a transaction, or a live change notice) always run,
+   * and ask devnet for data at least as new as `minSlot`.
+   */
+  const refresh = useCallback(async (minSlot?: number) => {
+    if (!minSlot && inflight.current) return;
+    if (!minSlot) inflight.current = true;
     try {
-      const snap = await loadAccounts(fresh);
-      setPlans(snap.plans);
-      setPasses(snap.passes);
-      setListings(snap.listings);
-      setMintReady(snap.mintReady);
+      const snap = await loadAccounts(minSlot);
+      if (snap.slot === null || snap.slot >= shownSlot.current) {
+        if (snap.slot !== null) shownSlot.current = snap.slot;
+        setPlans(snap.plans);
+        setPasses(snap.passes);
+        setListings(snap.listings);
+        setMintReady(snap.mintReady);
+      }
       setLoadError(null);
       hasData.current = true;
 
       if (publicKey && snap.wallet) {
-        setBalance(snap.wallet.usdc === null ? null : new BN(snap.wallet.usdc));
-        setSol(snap.wallet.lamports / 1e9);
+        if (snap.wallet.slot >= walletSlot.current) {
+          walletSlot.current = snap.wallet.slot;
+          setBalance(snap.wallet.usdc === null ? null : new BN(snap.wallet.usdc));
+          setSol(snap.wallet.lamports / 1e9);
+        }
       } else if (publicKey) {
         const [bal, lamports] = await Promise.all([
           connection.getTokenAccountBalance(usdcAta(publicKey)).then(
@@ -147,16 +174,53 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
       // Keep showing the last good data; only surface the error if we have none.
       if (!hasData.current) setLoadError(errorMessage(err));
     } finally {
-      inflight.current = false;
+      if (!minSlot) inflight.current = false;
       setLoading(false);
     }
   }, [loadAccounts, connection, publicKey]);
 
   useEffect(() => {
-    void refresh(false, true); // runs again when the wallet connects or changes
-    const id = setInterval(() => void refresh(), 15_000);
+    void refresh(1); // runs again when the wallet connects or changes, never skipped
+    const id = setInterval(() => void refresh(), 8_000);
     return () => clearInterval(id);
   }, [refresh]);
+
+  /**
+   * Live updates: devnet pushes a notice over a websocket whenever any Liquid
+   * Pass account changes (anyone's purchase, listing, resale or gift), or the
+   * connected wallet's USDC or SOL moves. Each notice triggers one read pinned
+   * to that slot, so other people's activity shows up within about a second.
+   */
+  useEffect(() => {
+    let pending = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const changed = (slot: number) => {
+      pending = Math.max(pending, slot);
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        const s = pending;
+        pending = 0;
+        void refresh(s);
+      }, 250);
+    };
+    const subs: number[] = [];
+    const walletSubs: number[] = [];
+    try {
+      subs.push(connection.onProgramAccountChange(PROGRAM_ID, (_a, ctx) => changed(ctx.slot), "confirmed"));
+      if (publicKey) {
+        walletSubs.push(connection.onAccountChange(publicKey, (_a, ctx) => changed(ctx.slot), "confirmed"));
+        walletSubs.push(connection.onAccountChange(usdcAta(publicKey), (_a, ctx) => changed(ctx.slot), "confirmed"));
+      }
+    } catch (err) {
+      console.warn("Liquid Pass: live updates unavailable, polling only", err);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      subs.forEach((id) => void connection.removeProgramAccountChangeListener(id).catch(() => {}));
+      walletSubs.forEach((id) => void connection.removeAccountChangeListener(id).catch(() => {}));
+    };
+  }, [connection, publicKey, refresh]);
 
   useEffect(() => {
     setNow(Math.floor(Date.now() / 1000));
@@ -172,9 +236,11 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
       }
       const id = toast.push("pending", `${label}: confirm in your wallet…`);
       try {
-        const sig = await build(writeProgram(connection, anchorWallet, sendTransaction));
+        let slot = 1;
+        const sig = await build(writeProgram(connection, anchorWallet, sendTransaction, (s) => (slot = s)));
         toast.update(id, "success", `${label}: confirmed on Solana devnet.`, sig);
-        await refresh(true);
+        // Read at or after the slot the transaction confirmed in, so it shows at once.
+        await refresh(slot);
         return true;
       } catch (err) {
         console.error(err);
