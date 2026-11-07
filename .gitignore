@@ -1,0 +1,16 @@
+target/
+node_modules/
+.anchor/
+test-ledger/
+*.key
+**/*-keypair.json
+!target/idl/
+.env
+.env.local
+.vercel
+.DS_Store
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.claude/
