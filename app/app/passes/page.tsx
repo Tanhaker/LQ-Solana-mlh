@@ -6,6 +6,7 @@ import { useChain } from "@/components/ChainData";
 import PassTicket from "@/components/PassTicket";
 import { Empty, LoadState, PageHead } from "@/components/ui";
 import PriceAdvisor from "@/components/PriceAdvisor";
+import Assistant from "@/components/Assistant";
 import { cancelListing, faucet, listPass, transferPass } from "@/lib/actions";
 import { parseUsdc, usdc } from "@/lib/format";
 import { currentPrice, fairValue, type Listing, type Pass, type Plan } from "@/lib/program";
@@ -70,6 +71,8 @@ export default function PassesPage() {
       </section>
 
       <LoadState loading={loading} error={loadError} />
+
+      {active.length > 0 && <Assistant />}
 
       <section className="mt-10">
         {wallet && active.length === 0 && !loading && (
