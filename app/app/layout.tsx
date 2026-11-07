@@ -6,6 +6,8 @@ import Nav, { Ticker } from "@/components/Nav";
 import { LINKS } from "@/lib/links";
 import PageFrame from "@/components/PageFrame";
 import LiquidityAI from "@/components/LiquidityAI";
+import Motion from "@/components/Motion";
+import Split from "@/components/Split";
 import "./globals.css";
 
 const body = Figtree({ variable: "--ff-body", subsets: ["latin"], weight: ["500", "700", "800"] });
@@ -19,9 +21,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable} h-full`}>
+    <html lang="en" className={`${body.variable} ${display.variable} h-full`} suppressHydrationWarning>
+      <head>
+        {/* Hide reveal-on-scroll content before first paint so it animates in instead of flashing. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('motion-ready')",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>
+          <Motion />
           <Ticker />
           <Nav />
           <main className="flex-1 w-full pt-2.5 sm:pt-3">
@@ -30,7 +42,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <footer className="text-white px-5 sm:px-10 pt-10 pb-12">
             <div className="max-w-[1400px] mx-auto">
               <div className="display text-[22vw] sm:text-[17vw] leading-[0.8] tracking-[-0.01em] select-none" aria-hidden>
-                Liquid <span className="slant text-[var(--yellow)]">Pass</span>
+                <Split text="Liquid" step={60} />{" "}
+                <span className="slant text-[var(--yellow)]">
+                  <Split text="Pass" delay={300} step={60} />
+                </span>
               </div>
               <div className="mt-10 flex flex-col lg:flex-row lg:items-end gap-8">
                 <div className="space-y-2 text-[14px] text-white/60 max-w-xl leading-[1.5]">

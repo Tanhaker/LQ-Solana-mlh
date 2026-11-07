@@ -1,11 +1,15 @@
 "use client";
 
+import Split from "./Split";
+
 export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="pb-4 max-w-[1000px] rise">
       <div className="eyebrow eyebrow-new">{eyebrow}</div>
-      <h1 className="display text-[52px] sm:text-[84px] lg:text-[104px] mt-5">{title}</h1>
-      {sub && <p className="text-ink-2 text-[18px] sm:text-[22px] mt-6 leading-[1.4] max-w-[760px]">{sub}</p>}
+      <h1 className="display text-[52px] sm:text-[84px] lg:text-[104px] mt-5">
+        <Split text={title} delay={150} step={22} />
+      </h1>
+      {sub && <p data-reveal style={{ ["--d" as string]: "350ms" }} className="text-ink-2 text-[18px] sm:text-[22px] mt-6 leading-[1.4] max-w-[760px]">{sub}</p>}
     </div>
   );
 }

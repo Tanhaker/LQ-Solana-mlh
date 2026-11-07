@@ -157,7 +157,7 @@ select:focus-visible {
   position: relative;
   margin: 0 8px 10px;
   border-radius: 28px;
-  overflow: hidden;
+  overflow: clip; /* clip, not hidden, so sticky children still pin */
   background: var(--paper);
 }
 @media (min-width: 640px) {
@@ -828,11 +828,207 @@ select:focus-visible {
   fill: #000 !important;
 }
 
+
+/* ================================================================ motion */
+
+/* Letter-by-letter headings (see components/Split.tsx). */
+.split-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.split .ch {
+  display: inline-block;
+}
+.motion-ready .split .ch {
+  opacity: 0;
+  transform: translateY(0.5em) rotate(6deg);
+  color: #d2d2d2;
+  transition-property: opacity, transform, color;
+  transition-duration: 0.45s, 0.8s, 0.7s;
+  transition-timing-function: ease, cubic-bezier(0.2, 0.9, 0.2, 1), ease;
+}
+.motion-ready .split[data-in] .ch {
+  opacity: 1;
+  transform: none;
+  color: inherit;
+}
+
+/* Blocks that fade up once. Stagger with style="--d: 120ms". */
+.motion-ready [data-reveal]:not(.split) {
+  opacity: 0;
+  transform: translateY(48px);
+  transition:
+    opacity 0.7s ease var(--d, 0ms),
+    transform 1s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0ms);
+}
+.motion-ready [data-reveal][data-in]:not(.split) {
+  opacity: 1;
+  transform: none;
+}
+
+/* Stickers pop in on load. */
+.pop {
+  display: inline-block;
+  animation: pop 0.8s cubic-bezier(0.3, 1.6, 0.5, 1) var(--d, 0ms) both;
+}
+@keyframes pop {
+  from {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* Each sheet slides up and grows into place as it enters (--e from Motion). */
+.sheet-rise {
+  transform: translateY(calc((1 - var(--e, 1)) * 160px)) scale(calc(0.9 + 0.1 * var(--e, 1)));
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+/* Scroll parallax. Set --amt for strength. */
+.para {
+  transform: translateY(calc((0.5 - var(--p, 0.5)) * var(--amt, 140px)));
+  will-change: transform;
+}
+
+/* A row that slides sideways as the page scrolls. */
+.track {
+  overflow: clip;
+}
+.track > * {
+  transform: translateX(calc(clamp(0, (var(--p, 0) - 0.12) / 0.66, 1) * -1 * var(--shift, 0px)));
+  will-change: transform;
+}
+
+/* Get band rows drift against each other on scroll. */
+.drift-l {
+  transform: translateX(calc((var(--p, 0.5) - 0.5) * -46vw));
+}
+.drift-r {
+  transform: translateX(calc((var(--p, 0.5) - 0.5) * 46vw));
+}
+
+/* Pinned showcase: the black box grows and the cards turn while you scroll. */
+.pin {
+  position: relative;
+  height: 340vh;
+}
+.pin-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pin-box {
+  --g: clamp(0, var(--p, 0) * 5, 1);
+  position: relative;
+  width: calc(88% + 12% * var(--g));
+  height: calc(70svh + 30svh * var(--g));
+  border-radius: calc(36px * (1 - var(--g)));
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  perspective: 1600px;
+}
+@media (min-width: 768px) {
+  .pin-box {
+    width: calc(64% + 36% * var(--g));
+  }
+}
+.pin-card-l {
+  transform: rotateY(calc(26deg - var(--p, 0) * 52deg)) rotateZ(calc(-9deg + var(--p, 0) * 13deg))
+    translateY(calc((0.5 - var(--p, 0)) * 70px));
+  transform-style: preserve-3d;
+}
+.pin-card-r {
+  transform: rotateY(calc(-26deg + var(--p, 0) * 52deg)) rotateZ(calc(8deg - var(--p, 0) * 12deg))
+    translateY(calc((var(--p, 0) - 0.5) * 70px));
+  transform-style: preserve-3d;
+}
+.flip-in {
+  animation: flip-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes flip-in {
+  from {
+    transform: rotateY(-100deg) scale(0.9);
+    opacity: 0;
+  }
+}
+.pin-bar > span {
+  display: block;
+  height: 100%;
+  width: calc(var(--p, 0) * 100%);
+  background: var(--yellow);
+}
+
+/* Segmented control: a black pill slides to the active tab. */
+.seg {
+  position: relative;
+}
+.seg-ind {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  border-radius: 999px;
+  background: #000;
+  transition:
+    left 0.55s cubic-bezier(0.5, 1.45, 0.45, 1),
+    width 0.55s cubic-bezier(0.5, 1.45, 0.45, 1);
+}
+.seg button {
+  position: relative;
+  z-index: 1;
+}
+.seg button[aria-selected="true"] {
+  background: transparent;
+}
+
+/* Page change: the old page falls away into the distance, the new one flies in. */
+::view-transition-old(.page-out) {
+  animation: page-out 0.55s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+::view-transition-new(.page-in) {
+  animation: page-in 0.7s cubic-bezier(0.2, 0.85, 0.2, 1) 0.18s both;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+}
+@keyframes page-out {
+  to {
+    transform: perspective(1400px) translateZ(-900px) rotateX(10deg);
+    opacity: 0;
+  }
+}
+@keyframes page-in {
+  from {
+    transform: perspective(1400px) translateZ(-700px) translateY(80px);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-rise,
+  .para,
+  .track > *,
+  .drift-l,
+  .drift-r,
+  .pin-card-l,
+  .pin-card-r {
+    transform: none !important;
+  }
+  .track {
+    overflow-x: auto;
   }
 }
