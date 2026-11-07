@@ -112,9 +112,9 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   }, [reader, connection, publicKey]);
 
   const hasData = useRef(false);
-  const refresh = useCallback(async (fresh = false) => {
-    // A post-transaction refresh waits for any routine one instead of being dropped.
-    for (let i = 0; fresh && inflight.current && i < 50; i++) await new Promise((r) => setTimeout(r, 100));
+  const refresh = useCallback(async (fresh = false, wait = false) => {
+    // A post-transaction or wallet-change refresh waits for a routine one instead of being dropped.
+    for (let i = 0; (fresh || wait) && inflight.current && i < 80; i++) await new Promise((r) => setTimeout(r, 100));
     if (inflight.current) return;
     inflight.current = true;
     try {
@@ -153,7 +153,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   }, [loadAccounts, connection, publicKey]);
 
   useEffect(() => {
-    void refresh();
+    void refresh(false, true); // runs again when the wallet connects or changes
     const id = setInterval(() => void refresh(), 15_000);
     return () => clearInterval(id);
   }, [refresh]);
