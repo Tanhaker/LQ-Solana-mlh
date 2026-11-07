@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
+import { JetBrains_Mono, Manrope, Unbounded } from "next/font/google";
 import Providers from "@/components/Providers";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({ variable: "--ff-display", subsets: ["latin"] });
-const body = Instrument_Sans({ variable: "--ff-body", subsets: ["latin"] });
-const mono = IBM_Plex_Mono({ variable: "--ff-mono", subsets: ["latin"], weight: ["400", "500"] });
+const display = Unbounded({ variable: "--ff-display", subsets: ["latin"], weight: ["500", "600", "700"] });
+const body = Manrope({ variable: "--ff-body", subsets: ["latin"] });
+const mono = JetBrains_Mono({ variable: "--ff-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
   title: "Liquid Pass on Solana",
@@ -21,11 +21,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           <Nav />
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-20">{children}</main>
-          <footer className="border-t border-line">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-              <span>Liquid Pass · Solana devnet</span>
-              <span>Test USDC only. No real money moves.</span>
-              <span>Built for the MLH Solana Hackathon 2026</span>
+          <footer className="border-t border-line bg-paper/60 backdrop-blur">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-muted">
+              <span className="font-display font-semibold text-ink">
+                Liquid<span className="grad-text">Pass</span>
+              </span>
+              <span>Running on Solana devnet with test USDC. No real money moves.</span>
+              <span className="sm:ml-auto">MLH Solana Hackathon 2026</span>
             </div>
           </footer>
         </Providers>
