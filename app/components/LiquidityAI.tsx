@@ -139,11 +139,11 @@ export default function LiquidityAI() {
         aria-label="Liquidity AI"
         aria-hidden={!open}
         inert={!open}
-        className={`lq-panel fixed z-[55] right-4 sm:right-6 bottom-[92px] sm:bottom-[108px] w-[calc(100vw-32px)] sm:w-[400px] h-[min(620px,calc(100dvh-120px))] flex flex-col overflow-hidden rounded-[24px] bg-white ${
+        className={`lq-panel fixed z-[55] right-4 sm:right-6 bottom-[96px] sm:bottom-[116px] w-[calc(100vw-32px)] sm:w-[410px] h-[min(620px,calc(100dvh-130px))] flex flex-col overflow-hidden rounded-[30px] bg-white ${
           open ? "is-open" : ""
         }`}
       >
-        <header className="relative h-[150px] shrink-0 bg-black overflow-hidden">
+        <header className="relative h-[150px] shrink-0 bg-black overflow-hidden border-b-[3px] border-black">
           {opened && (
             <video
               src="/brand/liquidity-dark.mp4"
@@ -159,7 +159,7 @@ export default function LiquidityAI() {
             <button
               type="button"
               onClick={() => setMessages([WELCOME])}
-              className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white grid place-items-center backdrop-blur"
+              className="w-8 h-8 rounded-full bg-white text-black border-2 border-black grid place-items-center hover:bg-[var(--yellow)]"
               aria-label="Start a new conversation"
               title="New conversation"
             >
@@ -171,7 +171,7 @@ export default function LiquidityAI() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white grid place-items-center backdrop-blur"
+              className="w-8 h-8 rounded-full bg-white text-black border-2 border-black grid place-items-center hover:bg-[var(--yellow)]"
               aria-label="Close Liquidity AI"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -180,9 +180,9 @@ export default function LiquidityAI() {
             </button>
           </div>
           <div className="absolute left-5 bottom-4 text-white">
-            <div className="text-[21px] font-semibold tracking-[-0.02em]">Liquidity AI</div>
-            <div className="text-[12px] text-white/65 flex items-center gap-1.5 mt-0.5">
-              <span className="pulse text-[#34c759]" /> Reads Solana devnet live
+            <div className="display text-[34px] leading-none">Liquidity <span className="slant text-[var(--yellow)]">AI</span></div>
+            <div className="text-[12px] font-bold uppercase tracking-[0.04em] text-white/75 flex items-center gap-1.5 mt-1.5">
+              <span className="pulse text-[var(--green)]" /> Reads Solana devnet live
             </div>
           </div>
         </header>
@@ -210,7 +210,7 @@ export default function LiquidityAI() {
                   key={p}
                   type="button"
                   onClick={() => send(p)}
-                  className="text-[13px] text-blue border border-line-strong rounded-full px-3 py-1.5 hover:bg-accent-soft hover:border-blue transition-colors"
+                  className="text-[13px] font-bold border-2 border-black rounded-full px-3 py-1.5 bg-white hover:bg-[var(--yellow)] transition-colors"
                 >
                   {p}
                 </button>
@@ -220,7 +220,7 @@ export default function LiquidityAI() {
         </div>
 
         <form
-          className="shrink-0 border-t border-line p-3 flex items-center gap-2"
+          className="shrink-0 border-t-[3px] border-black p-3 flex items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             send();
@@ -233,12 +233,12 @@ export default function LiquidityAI() {
             maxLength={600}
             placeholder="Ask Liquidity AI"
             aria-label="Message Liquidity AI"
-            className="flex-1 h-10 rounded-full bg-paper px-4 text-[15px] placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-blue/30"
+            className="flex-1 h-11 rounded-full border-[2.5px] border-black bg-white px-4 text-[15px] placeholder:text-faint focus:outline-none focus:shadow-[3px_3px_0_var(--violet)]"
           />
           <button
             type="submit"
             disabled={!input.trim() || busy}
-            className="w-9 h-9 shrink-0 rounded-full bg-blue text-white grid place-items-center disabled:opacity-30 transition-opacity"
+            className="w-11 h-11 shrink-0 rounded-full border-[2.5px] border-black bg-black text-white grid place-items-center disabled:opacity-30 hover:bg-[var(--violet)] transition-colors"
             aria-label="Send"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -246,7 +246,7 @@ export default function LiquidityAI() {
             </svg>
           </button>
         </form>
-        <p className="shrink-0 text-center text-[11px] text-faint pb-2 -mt-1">
+        <p className="shrink-0 text-center text-[11px] text-muted pb-2 -mt-1">
           AI answers can be wrong. Liquidity AI never asks for your keys.
         </p>
       </section>
@@ -254,7 +254,7 @@ export default function LiquidityAI() {
       {/* Floating trigger: the liquid logo, frozen on its first frame until hovered. */}
       <div className="fixed z-[56] right-4 sm:right-6 bottom-4 sm:bottom-6 flex items-center gap-3 group">
         <span
-          className={`hidden md:block pointer-events-none text-[13px] font-medium bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+          className={`hidden md:block pointer-events-none text-[13px] font-bold uppercase tracking-[0.02em] bg-[var(--yellow)] border-[2.5px] border-black px-3.5 py-1.5 rounded-full transition-all duration-300 ${
             open ? "opacity-0 translate-x-2" : "opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
           }`}
         >
@@ -300,11 +300,11 @@ function Rich({ text, onNavigate }: { text: string; onNavigate: () => void }) {
     <>
       {parts.map((p, i) =>
         /^\/(market|passes|issuer|verify)$/.test(p) ? (
-          <Link key={i} href={p} onClick={onNavigate} className="text-link underline-offset-2 hover:underline">
+          <Link key={i} href={p} onClick={onNavigate} className="font-bold underline decoration-2 underline-offset-2 hover:text-[var(--violet)]">
             {PAGE_NAMES[p]}
           </Link>
         ) : p === "faucet.solana.com" ? (
-          <a key={i} href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-link hover:underline">
+          <a key={i} href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="font-bold underline decoration-2 underline-offset-2">
             faucet.solana.com
           </a>
         ) : (

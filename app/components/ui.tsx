@@ -2,17 +2,17 @@
 
 export function PageHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
-    <div className="pt-12 sm:pt-16 pb-2 max-w-3xl rise">
+    <div className="pb-4 max-w-[1000px] rise">
       <div className="eyebrow eyebrow-new">{eyebrow}</div>
-      <h1 className="text-[34px] sm:text-[48px] font-semibold mt-2 leading-[1.08]">{title}</h1>
-      {sub && <p className="text-muted text-[17px] sm:text-[19px] mt-4 leading-[1.45]">{sub}</p>}
+      <h1 className="display text-[52px] sm:text-[84px] lg:text-[104px] mt-5">{title}</h1>
+      {sub && <p className="text-ink-2 text-[18px] sm:text-[22px] mt-6 leading-[1.4] max-w-[760px]">{sub}</p>}
     </div>
   );
 }
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line-strong p-8 text-center text-muted">
+    <div className="rounded-[24px] border-[3px] border-dashed border-black bg-[var(--sky)] p-8 text-center text-ink-2 font-bold">
       {children}
     </div>
   );
@@ -21,7 +21,7 @@ export function Empty({ children }: { children: React.ReactNode }) {
 export function LoadState({ loading, error }: { loading: boolean; error: string | null }) {
   if (error)
     return (
-      <div className="mt-6 rounded-xl bg-warn-soft text-warn px-4 py-3 text-sm">
+      <div className="mt-6 rounded-[18px] border-[3px] border-black bg-[var(--pink)] text-black px-4 py-3 text-sm font-bold">
         Couldn&apos;t read Solana devnet: {error}
       </div>
     );
