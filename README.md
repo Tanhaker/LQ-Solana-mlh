@@ -98,6 +98,23 @@ GOOGLE_GENERATIVE_AI_API_KEY=...   # Gemini for Liquidity AI and the pass assist
 Use a wallet such as Phantom in devnet mode, get devnet SOL at
 [faucet.solana.com](https://faucet.solana.com), then press **Get 500 test USDC** on My Passes.
 
+### Demo data and end-to-end check
+
+```bash
+cd app
+npx tsx scripts/seed-demo.ts [YOUR_WALLET]   # fill devnet with a live-looking market
+npx tsx scripts/e2e-devnet.ts                 # assert every rule on devnet
+```
+
+`seed-demo.ts` uses the deploy wallet plus saved demo wallets (gitignored) to create
+four issuers, eleven plans, passes held by six demo buyers, ten resale listings, a
+completed resale and a gift. Given your address, it also sends your wallet devnet SOL,
+500 test USDC and two passes. It is safe to re-run; it only adds what is missing.
+
+The site reads all program accounts through `/api/state`, one cached devnet read shared
+by every visitor (with a direct-RPC fallback), so the public devnet rate limit does not
+empty the pages.
+
 ## Honest limits
 
 - Devnet only, with a test USDC token the program mints. Not audited.

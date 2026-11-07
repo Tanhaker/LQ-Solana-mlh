@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAnchorWallet, useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { Program } from "@anchor-lang/core";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey as PublicKeyCtor, type PublicKey } from "@solana/web3.js";
+import idl from "@/lib/idl/liquid_pass.json";
 import BN from "bn.js";
 import type { LiquidPass } from "@/lib/idl/liquid_pass";
 import {
@@ -41,6 +42,9 @@ type ChainData = {
 
 const Ctx = createContext<ChainData | null>(null);
 
+/** First 8 bytes of each account type, from the IDL. */
+const DISCRIMINATORS = idl.accounts.map((a) => ({ name: a.name, bytes: a.discriminator }));
+
 export function ChainDataProvider({ children }: { children: React.ReactNode }) {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
@@ -60,21 +64,57 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
 
   const reader = useMemo(() => readProgram(connection), [connection]);
 
-  const refresh = useCallback(async () => {
-    if (inflight.current) return;
-    inflight.current = true;
+  /**
+   * Program accounts: first from the cached /api/state snapshot (one devnet
+   * read shared by every visitor), falling back to reading devnet directly.
+   */
+  const loadAccounts = useCallback(async () => {
     try {
+      const res = await fetch("/api/state", { cache: "no-store" });
+      if (!res.ok) throw new Error(`state ${res.status}`);
+      const snap: { mintReady: boolean; accounts: { pubkey: string; data: string }[] } = await res.json();
+      const out = { plans: [] as Plan[], passes: [] as Pass[], listings: [] as Listing[], mintReady: snap.mintReady };
+      for (const a of snap.accounts) {
+        const data = Buffer.from(a.data, "base64");
+        const kind = DISCRIMINATORS.find((d) => d.bytes.every((b, i) => data[i] === b))?.name;
+        if (!kind) continue;
+        const address = new PublicKeyCtor(a.pubkey);
+        // The program client camel-cases IDL names ("Plan" -> "plan").
+        const decoded = reader.coder.accounts.decode(kind[0].toLowerCase() + kind.slice(1), data);
+        if (kind === "Plan") out.plans.push({ ...decoded, address });
+        else if (kind === "Pass") out.passes.push({ ...decoded, address });
+        else out.listings.push({ ...decoded, address });
+      }
+      return out;
+    } catch (err) {
+      console.warn("Liquid Pass: snapshot unavailable, reading devnet directly", err);
       const [pl, pa, li, mintInfo] = await Promise.all([
         reader.account.plan.all(),
         reader.account.pass.all(),
         reader.account.listing.all(),
         connection.getAccountInfo(usdcMint()),
       ]);
-      setPlans(pl.map((p) => ({ ...p.account, address: p.publicKey })));
-      setPasses(pa.map((p) => ({ ...p.account, address: p.publicKey })));
-      setListings(li.map((p) => ({ ...p.account, address: p.publicKey })));
-      setMintReady(mintInfo !== null);
+      return {
+        plans: pl.map((p) => ({ ...p.account, address: p.publicKey })),
+        passes: pa.map((p) => ({ ...p.account, address: p.publicKey })),
+        listings: li.map((p) => ({ ...p.account, address: p.publicKey })),
+        mintReady: mintInfo !== null,
+      };
+    }
+  }, [reader, connection]);
+
+  const hasData = useRef(false);
+  const refresh = useCallback(async () => {
+    if (inflight.current) return;
+    inflight.current = true;
+    try {
+      const snap = await loadAccounts();
+      setPlans(snap.plans);
+      setPasses(snap.passes);
+      setListings(snap.listings);
+      setMintReady(snap.mintReady);
       setLoadError(null);
+      hasData.current = true;
 
       if (publicKey) {
         const [bal, lamports] = await Promise.all([
@@ -91,12 +131,13 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         setSol(null);
       }
     } catch (err) {
-      setLoadError(errorMessage(err));
+      // Keep showing the last good data; only surface the error if we have none.
+      if (!hasData.current) setLoadError(errorMessage(err));
     } finally {
       inflight.current = false;
       setLoading(false);
     }
-  }, [reader, connection, publicKey]);
+  }, [loadAccounts, connection, publicKey]);
 
   useEffect(() => {
     void refresh();
