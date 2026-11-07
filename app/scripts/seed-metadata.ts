@@ -51,7 +51,7 @@ const issuers = [
   load(join(homedir(), ".config", "solana", "id.json")),
   ...["issuerB", "issuerC", "issuerD"].map((n) => Keypair.fromSecretKey(Uint8Array.from(demo[n]))),
 ];
-const programFor = (k: Keypair) =>
+const programFor = (k: Keypair): Program<LiquidPass> =>
   new Program(idl as LiquidPass, new AnchorProvider(connection, new Wallet(k), { commitment: "confirmed" }));
 const slug = (name: string) => name.toLowerCase().split(/\s+/).join("-");
 
