@@ -68,12 +68,19 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
    * Program accounts: first from the cached /api/state snapshot (one devnet
    * read shared by every visitor), falling back to reading devnet directly.
    */
-  const loadAccounts = useCallback(async () => {
+  const loadAccounts = useCallback(async (fresh = false) => {
     try {
-      const res = await fetch("/api/state", { cache: "no-store" });
+      const q = new URLSearchParams();
+      if (publicKey) q.set("owner", publicKey.toBase58());
+      if (fresh) q.set("fresh", String(Date.now()));
+      const res = await fetch(`/api/state${q.size ? `?${q}` : ""}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`state ${res.status}`);
-      const snap: { mintReady: boolean; accounts: { pubkey: string; data: string }[] } = await res.json();
-      const out = { plans: [] as Plan[], passes: [] as Pass[], listings: [] as Listing[], mintReady: snap.mintReady };
+      const snap: {
+        mintReady: boolean;
+        accounts: { pubkey: string; data: string }[];
+        wallet: { usdc: string | null; lamports: number } | null;
+      } = await res.json();
+      const out = { plans: [] as Plan[], passes: [] as Pass[], listings: [] as Listing[], mintReady: snap.mintReady, wallet: snap.wallet };
       for (const a of snap.accounts) {
         const data = Buffer.from(a.data, "base64");
         const kind = DISCRIMINATORS.find((d) => d.bytes.every((b, i) => data[i] === b))?.name;
@@ -99,16 +106,19 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
         passes: pa.map((p) => ({ ...p.account, address: p.publicKey })),
         listings: li.map((p) => ({ ...p.account, address: p.publicKey })),
         mintReady: mintInfo !== null,
+        wallet: null,
       };
     }
-  }, [reader, connection]);
+  }, [reader, connection, publicKey]);
 
   const hasData = useRef(false);
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (fresh = false) => {
+    // A post-transaction refresh waits for any routine one instead of being dropped.
+    for (let i = 0; fresh && inflight.current && i < 50; i++) await new Promise((r) => setTimeout(r, 100));
     if (inflight.current) return;
     inflight.current = true;
     try {
-      const snap = await loadAccounts();
+      const snap = await loadAccounts(fresh);
       setPlans(snap.plans);
       setPasses(snap.passes);
       setListings(snap.listings);
@@ -116,7 +126,10 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
       setLoadError(null);
       hasData.current = true;
 
-      if (publicKey) {
+      if (publicKey && snap.wallet) {
+        setBalance(snap.wallet.usdc === null ? null : new BN(snap.wallet.usdc));
+        setSol(snap.wallet.lamports / 1e9);
+      } else if (publicKey) {
         const [bal, lamports] = await Promise.all([
           connection.getTokenAccountBalance(usdcAta(publicKey)).then(
             (r) => new BN(r.value.amount),
@@ -161,7 +174,7 @@ export function ChainDataProvider({ children }: { children: React.ReactNode }) {
       try {
         const sig = await build(writeProgram(connection, anchorWallet));
         toast.update(id, "success", `${label}: confirmed on Solana devnet.`, sig);
-        await refresh();
+        await refresh(true);
         return true;
       } catch (err) {
         console.error(err);

@@ -1,7 +1,7 @@
 import { connection as dynamicRequest } from "next/server";
-import { Connection } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { PROGRAM_ID, RPC_URL } from "@/lib/config";
-import { usdcMint } from "@/lib/program";
+import { usdcAta, usdcMint } from "@/lib/program";
 
 /**
  * One cached snapshot of every Liquid Pass account on devnet.
@@ -33,9 +33,42 @@ async function load(): Promise<Snapshot> {
   };
 }
 
-export async function GET() {
+type WalletBalances = { at: number; usdc: string | null; lamports: number };
+const wallets = new Map<string, WalletBalances>();
+
+/** The connected wallet's test USDC (base units, null if no account) and SOL. */
+async function balances(owner: PublicKey): Promise<WalletBalances | null> {
+  const key = owner.toBase58();
+  const hit = wallets.get(key);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit;
+  try {
+    const rpc = new Connection(RPC_URL, "confirmed");
+    const [lamports, ata] = await Promise.all([rpc.getBalance(owner), rpc.getAccountInfo(usdcAta(owner))]);
+    // SPL token account layout: the u64 amount sits at byte offset 64.
+    const usdc = ata ? ata.data.readBigUInt64LE(64).toString() : null;
+    const out = { at: Date.now(), usdc, lamports };
+    if (wallets.size > 500) wallets.clear();
+    wallets.set(key, out);
+    return out;
+  } catch {
+    return hit ?? null;
+  }
+}
+
+export async function GET(req: Request) {
   await dynamicRequest();
-  const fresh = cache && Date.now() - cache.at < TTL_MS;
+  let owner: PublicKey | null = null;
+  const raw = new URL(req.url).searchParams.get("owner");
+  if (raw) {
+    try {
+      owner = new PublicKey(raw);
+    } catch {
+      return Response.json({ error: "Bad owner address" }, { status: 400 });
+    }
+  }
+  // `fresh` is sent right after a transaction so the page shows its result.
+  const force = new URL(req.url).searchParams.has("fresh");
+  const fresh = !force && cache && Date.now() - cache.at < TTL_MS;
   let stale = false;
   if (!fresh) {
     try {
@@ -50,8 +83,16 @@ export async function GET() {
       stale = true;
     }
   }
+  if (force && owner) wallets.delete(owner.toBase58());
+  const wallet = owner ? await balances(owner) : null;
   return Response.json(
-    { ...cache, stale },
-    { headers: { "Cache-Control": "public, max-age=0, s-maxage=8, stale-while-revalidate=60" } },
+    { ...cache, stale, wallet },
+    {
+      headers: {
+        // Shared snapshots can sit at the CDN; per-wallet answers must not.
+        "Cache-Control":
+          owner || force ? "private, no-store" : "public, max-age=0, s-maxage=8, stale-while-revalidate=60",
+      },
+    },
   );
 }
