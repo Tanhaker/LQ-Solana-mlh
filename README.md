@@ -47,6 +47,16 @@ wallet.
   address), and the program enforces the same rules on-chain regardless.
 - With no AI key configured it falls back to built-in rules and says so on screen.
 
+## Liquidity AI (site-wide helper)
+
+The liquid logo in the bottom-right corner opens **Liquidity AI**, a chat helper on every
+page. Each question is sent with a fresh snapshot of on-chain data (open plans, live
+resale prices, and your own passes and balance if a wallet is connected), so it can
+answer "what's on resale right now?" or "how much is my pass worth?" from Solana
+devnet rather than from memory. It is read-only: it cannot sign or move funds, and it
+refuses seed phrases. Code: `app/components/LiquidityAI.tsx`, `app/app/api/chat/route.ts`.
+Without an AI key it falls back to keyword answers.
+
 ## Program
 
 `programs/liquid_pass/src/lib.rs` (Anchor 1.2.2):
@@ -82,7 +92,7 @@ Optional `app/.env.local`:
 
 ```
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
-GOOGLE_GENERATIVE_AI_API_KEY=...   # Gemini for the pass assistant
+GOOGLE_GENERATIVE_AI_API_KEY=...   # Gemini for Liquidity AI and the pass assistant
 ```
 
 Use a wallet such as Phantom in devnet mode, get devnet SOL at
@@ -99,7 +109,9 @@ Use a wallet such as Phantom in devnet mode, get devnet SOL at
 ## How we built it
 
 This is a new codebase written during the hackathon. The Liquid Pass idea came from an
-earlier project our team built on another chain; no code or design was reused from it.
+earlier project our team built on another chain; no code was reused from it. The
+Liquid Pass logo and its animated version (used for the Liquidity AI button) are our
+team's existing brand assets.
 
 AI tools used: **Claude Code** (Anthropic) assisted with writing code, and **Google
-Gemini** powers the in-app pass assistant.
+Gemini** powers Liquidity AI and the in-app pass assistant.

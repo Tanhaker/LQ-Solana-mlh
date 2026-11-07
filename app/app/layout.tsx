@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import Providers from "@/components/Providers";
 import Nav from "@/components/Nav";
+import LiquidityAI from "@/components/LiquidityAI";
 import "./globals.css";
 
 const body = Inter({ variable: "--ff-body", subsets: ["latin"] });
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </div>
             </div>
           </footer>
+          <LiquidityAI />
         </Providers>
       </body>
     </html>

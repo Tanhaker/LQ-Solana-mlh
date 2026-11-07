@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -27,7 +28,7 @@ export default function Nav() {
       <nav className="globalnav relative z-50 text-[12px]" aria-label="Global">
         <div className="max-w-[1080px] mx-auto px-4 sm:px-6 h-11 flex items-center gap-6">
           <Link href="/" className="flex items-center shrink-0 opacity-90 hover:opacity-100" aria-label="Liquid Pass home">
-            <Logo />
+            <Image src="/brand/logo.png" alt="" width={26} height={26} priority />
           </Link>
           <div className="flex-1 flex items-center justify-between sm:justify-center gap-5 sm:gap-10 overflow-x-auto">
             {LINKS.map((l) => (
@@ -67,26 +68,5 @@ export default function Nav() {
         </div>
       </div>
     </>
-  );
-}
-
-function Logo() {
-  // A ticket with a perforation, filled with the Solana gradient.
-  return (
-    <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden>
-      <defs>
-        <linearGradient id="lp-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#9945FF" />
-          <stop offset="0.5" stopColor="#4F6BFF" />
-          <stop offset="1" stopColor="#0FBF83" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="7" width="28" height="18" rx="5" fill="url(#lp-g)" />
-      <circle cx="21" cy="7" r="3" fill="#fafafc" />
-      <circle cx="21" cy="25" r="3" fill="#fafafc" />
-      <path d="M21 11v10" stroke="#fafafc" strokeWidth="1.6" strokeDasharray="1.8 1.8" />
-      <rect x="6.5" y="12.5" width="9" height="2.2" rx="1.1" fill="#fafafc" opacity="0.9" />
-      <rect x="6.5" y="17.3" width="6" height="2.2" rx="1.1" fill="#fafafc" opacity="0.6" />
-    </svg>
   );
 }

@@ -1,5 +1,5 @@
 import { generateText, Output } from "ai";
-import { google } from "@ai-sdk/google";
+import { MODEL, aiEnabled } from "@/lib/ai";
 import { z } from "zod";
 import { PublicKey } from "@solana/web3.js";
 
@@ -40,13 +40,6 @@ const Proposal = z.object({
 });
 type Proposal = z.infer<typeof Proposal>;
 
-// Google Gemini. With GOOGLE_GENERATIVE_AI_API_KEY it calls Google directly;
-// otherwise it goes through Vercel AI Gateway (AI_GATEWAY_API_KEY).
-const hasGeminiKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-const MODEL = hasGeminiKey
-  ? google(process.env.GEMINI_MODEL ?? "gemini-2.5-flash")
-  : (process.env.AI_MODEL ?? "google/gemini-3.8-flash");
-
 export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -56,7 +49,7 @@ export async function POST(req: Request) {
 
   let proposal: Proposal;
   let source: "ai" | "rules";
-  if (hasGeminiKey || process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN) {
+  if (aiEnabled) {
     try {
       proposal = await askModel(body);
       source = "ai";

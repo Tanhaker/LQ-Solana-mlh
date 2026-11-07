@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useChain } from "@/components/ChainData";
@@ -328,7 +329,9 @@ function HeroPass() {
             <div className="p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-[12px] text-muted font-medium">Liquid Pass · No. 0007</div>
+                  <div className="text-[12px] text-muted font-medium flex items-center gap-1.5">
+                    <Image src="/brand/logo.png" alt="" width={18} height={18} /> Liquid Pass · No. 0007
+                  </div>
                   <div className="text-[24px] sm:text-[30px] font-semibold tracking-[-0.03em] mt-1">AI Writer Pro</div>
                   <div className="text-[13px] text-muted mt-0.5">30-day plan · 10% resale royalty</div>
                 </div>
