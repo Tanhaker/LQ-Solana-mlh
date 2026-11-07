@@ -70,7 +70,7 @@ function Hero() {
         <p className="mt-8 sm:mt-10 text-[34px] sm:text-[64px] lg:text-[80px] leading-[1] tracking-[-0.035em] font-bold">
           <Split text="Your time. Unlocked." delay={700} step={28} />
         </p>
-        <p data-reveal style={d(900)} className="mt-4 text-[17px] sm:text-[21px] max-w-[620px] mx-auto text-ink-2">
+        <p data-reveal style={d(900)} className="mt-5 text-[16px] sm:text-[19px] max-w-[600px] mx-auto text-black font-bold bg-white border-[2.5px] border-black rounded-[20px] px-5 py-3 shadow-[4px_4px_0_#000]">
           Paid for 30 days? Use the days you need, sell the other 20, and the issuer earns on every resale.
         </p>
         <div data-reveal style={d(1050)} className="mt-8 flex flex-wrap items-center justify-center gap-3">
