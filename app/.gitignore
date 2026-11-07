@@ -1,2 +1,5 @@
 .vercel
 .env*
+
+# demo wallets created by scripts/seed-demo.ts
+scripts/.demo-wallets.json
