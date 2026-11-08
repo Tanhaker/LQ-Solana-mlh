@@ -1,0 +1,12 @@
+{
+  "name": "liquid-pass-demo-recorder",
+  "private": true,
+  "type": "module",
+  "description": "Records the Liquid Pass demo video against the live site (see README in this folder).",
+  "scripts": { "record": "node record-demo.mjs" },
+  "dependencies": {
+    "@solana/web3.js": "^1.99.0",
+    "bs58": "^6.0.0",
+    "playwright-core": "^1.55.0"
+  }
+}
