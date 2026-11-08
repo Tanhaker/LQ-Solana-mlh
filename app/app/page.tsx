@@ -46,9 +46,12 @@ function Hero() {
         <img src="/brand/tube.webp" alt="" fetchPriority="high" decoding="async" className="tube-in w-full h-full object-cover object-center" />
       </div>
 
-      <div className="relative pt-[120px] sm:pt-[150px] pb-16 sm:pb-24 px-4 text-center">
+      {/* Every size here is capped by viewport height as well as width, so the
+          title, tagline, card and buttons fit in the first screen on any
+          display (a 1920x1080 laptop leaves only ~880px for the page). */}
+      <div className="relative pt-[clamp(76px,12svh,150px)] pb-16 sm:pb-24 px-4 text-center">
         <div className="relative inline-block">
-          <h1 className="display text-[clamp(104px,22vw,330px)] leading-[0.8] tracking-[-0.01em]">
+          <h1 className="display text-[clamp(104px,min(22vw,25svh),330px)] leading-[0.8] tracking-[-0.01em]">
             <Split text="Liquid" delay={80} step={70} />
             <br />
             <Split text="Pass" delay={420} step={70} />
@@ -67,13 +70,13 @@ function Hero() {
           </span>
         </div>
 
-        <p className="mt-8 sm:mt-10 text-[34px] sm:text-[64px] lg:text-[80px] leading-[1] tracking-[-0.035em] font-bold">
+        <p className="mt-[clamp(18px,3svh,40px)] text-[min(34px,5svh)] sm:text-[min(64px,7svh)] lg:text-[min(80px,7.2svh)] leading-[1] tracking-[-0.035em] font-bold">
           <Split text="Your time. Unlocked." delay={700} step={28} />
         </p>
-        <p data-reveal style={d(900)} className="mt-5 text-[16px] sm:text-[19px] max-w-[600px] mx-auto text-black font-bold bg-white border-[2.5px] border-black rounded-[20px] px-5 py-3 shadow-[4px_4px_0_#000]">
+        <p data-reveal style={d(900)} className="mt-[clamp(12px,2svh,20px)] text-[16px] sm:text-[clamp(16px,2.1svh,19px)] max-w-[600px] mx-auto text-black font-bold bg-white border-[2.5px] border-black rounded-[20px] px-5 py-3 shadow-[4px_4px_0_#000]">
           Paid for 30 days? Use the days you need, sell the other 20, and the issuer earns on every resale.
         </p>
-        <div data-reveal style={d(1050)} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div data-reveal style={d(1050)} className="mt-[clamp(16px,3svh,32px)] flex flex-wrap items-center justify-center gap-3">
           <Link href="/market" className="btn">
             Explore the market
           </Link>

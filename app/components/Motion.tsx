@@ -39,8 +39,14 @@ export default function Motion() {
       document.querySelectorAll<HTMLElement>("[data-reveal]:not([data-in])").forEach((el) => {
         if (seen.has(el)) return;
         seen.add(el);
-        if (reduce) el.setAttribute("data-in", "");
-        else io.observe(el);
+        if (reduce) return el.setAttribute("data-in", "");
+        // Already on screen when it appears (e.g. the hero's buttons on a short
+        // laptop screen): play its entrance now. The observer alone would miss
+        // it, because its 48px starting offset can sit below the trigger line.
+        const r = el.getBoundingClientRect();
+        if (r.bottom > 0 && r.top - 48 < window.innerHeight) {
+          requestAnimationFrame(() => requestAnimationFrame(() => el.setAttribute("data-in", "")));
+        } else io.observe(el);
       });
       scrollEls = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll]"));
       frame();
