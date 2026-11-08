@@ -169,19 +169,37 @@ def main():
     # cool rim on the shadow side
     rim = np.clip(1 - nz, 0, 1) ** 2.4 * np.clip(-(nx * L[0] + ny * L[1]) * 1.4, 0, 1)
 
-    deep = np.array([0.02, 0.30, 0.80])
-    mid = np.array([0.12, 0.55, 1.00])
-    light = np.array([0.46, 0.79, 1.00])
+    # Solana gradient along the tube's length: purple -> blue -> teal -> green.
+    # Each pixel takes the base color of its spot along the path, then is shaded
+    # from a deep tone (in shadow) to a light tone (facing the light).
+    stops = [
+        (0.00, np.array([0.60, 0.27, 1.00])),  # #9945FF
+        (0.34, np.array([0.36, 0.42, 1.00])),  # violet-blue
+        (0.62, np.array([0.10, 0.72, 0.92])),  # teal
+        (1.00, np.array([0.08, 0.95, 0.58])),  # #14F195
+    ]
+    g = np.clip(tu / max(arclen[-1], 1.0), 0, 1)
+    base = np.zeros((H, W, 3))
+    for (g0, c0), (g1, c1) in zip(stops, stops[1:]):
+        seg = (g >= g0) & (g <= g1)
+        f = ((g - g0) / (g1 - g0))[..., None]
+        f = f * f * (3 - 2 * f)  # smoothstep, so the hue changes have no hard seams
+        base = np.where(seg[..., None], c0 + (c1 - c0) * f, base)
+
+    deep = base * 0.38
+    mid = base
+    light = base + (1 - base) * 0.42
     t = lambert[..., None]
     col = np.where(t < 0.55, deep + (mid - deep) * (t / 0.55), mid + (light - mid) * ((t - 0.55) / 0.45))
 
     ao = 0.64 + 0.36 * F  # pores sit darker
     col = col * ao[..., None]
-    col += spec[..., None] * np.array([0.55, 0.84, 1.0]) * 0.38
-    col += rim[..., None] * np.array([0.35, 0.85, 0.95]) * 0.55
+    tint = base + (1 - base) * 0.6  # highlights pick up the local hue
+    col += spec[..., None] * tint * 0.38
+    col += rim[..., None] * (base + (1 - base) * 0.35) * 0.55
     # bright flecks on the foam tips
     fleck = np.clip((F - 0.8) / 0.2, 0, 1) * lambert
-    col += fleck[..., None] * np.array([0.55, 0.85, 1.0]) * 0.3
+    col += fleck[..., None] * tint * 0.3
 
     # Soft contact shadow where a later stretch of tube passes over an earlier
     # one: look back toward the light; if a much later segment is there, this

@@ -155,5 +155,10 @@ earlier project our team built on another chain; no code was reused from it. The
 Liquid Pass logo and its animated version (used for the Liquidity AI button) are our
 team's existing brand assets.
 
+The site's visual style was inspired by the playful sticker look of modern wallet
+sites such as Slush. All code, artwork and copy are our own: the hero tube is our own
+3D render in Solana's colors (`app/scripts/render-tube.py`), the stickers and plan
+logos are drawn by our code, and the fonts are the open-source Anton and Figtree.
+
 AI tools used: **Claude Code** (Anthropic) assisted with writing code, and **Google
 Gemini** powers Liquidity AI and the in-app pass assistant.
